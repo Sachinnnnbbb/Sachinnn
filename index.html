@@ -1,193 +1,301 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Jio Recharge Tracker</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Team Performance Tracker</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="bg-gray-100 p-4 font-sans">
-  <div class="max-w-xl mx-auto bg-white p-6 rounded-2xl shadow-lg">
-    <h2 class="text-2xl font-bold text-center text-blue-600 mb-4">📱 Jio Recharge Tracker</h2>
+  <div class="max-w-5xl mx-auto">
+    <h1 class="text-3xl font-bold text-center text-blue-700 mb-6">Team Performance Tracker</h1>
 
-    <div class="space-y-4">
-      <input id="name" type="text" placeholder="Customer Name" class="w-full border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
-      <input id="number" type="tel" placeholder="Mobile Number" class="w-full border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
-
-      <select id="plan" class="w-full border p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400">
-        <option value="28">1 Month (28 days)</option>
-        <option value="56">2 Months (56 days)</option>
-        <option value="84">3 Months (84 days)</option>
-        <option value="112">4 Months (112 days)</option>
-        <option value="50">50 Days</option>
-      </select>
-
-      <button onclick="saveCustomer()" class="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition">Save</button>
-    </div>
-  </div>
-
-  <div class="max-w-2xl mx-auto mt-6">
-    <div class="flex justify-between items-center mb-3">
-      <h3 class="text-xl font-semibold text-gray-700 text-center w-full">📋 Saved Customers</h3>
-    </div>
-
+    <!-- Add Member Button -->
     <div class="text-right mb-4">
-      <button onclick="exportPDF()" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition">
-        📄 Export to PDF
-      </button>
+      <button onclick="openMemberModal()" class="bg-blue-600 text-white px-4 py-2 rounded">+ Add Member</button>
     </div>
 
-    <div id="customerList" class="space-y-3 bg-white p-4 rounded-xl shadow"></div>
+    <!-- Add Member Modal -->
+    <div id="memberModal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center">
+      <div class="bg-white p-6 rounded shadow-lg w-full max-w-md">
+        <h2 class="text-xl font-bold mb-4">Add Team Member</h2>
+        <input id="name" type="text" placeholder="Name" class="p-2 border rounded w-full mb-2" />
+        <input id="memberId" type="text" placeholder="ID" class="p-2 border rounded w-full mb-2" />
+        <input id="password" type="text" placeholder="Password" class="p-2 border rounded w-full mb-2" />
+        <input id="locality" type="text" placeholder="Locality" class="p-2 border rounded w-full mb-4" />
+        <div class="flex justify-end gap-2">
+          <button onclick="closeMemberModal()" class="bg-gray-400 text-white px-4 py-2 rounded">Cancel</button>
+          <button onclick="saveMember()" class="bg-blue-600 text-white px-4 py-2 rounded">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Daily Entry Form -->
+    <div class="bg-white p-4 rounded shadow mb-6">
+      <h2 class="text-xl font-semibold mb-2">Add Daily Entry</h2>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <select id="entryMember" class="p-2 border rounded w-full"></select>
+        <input id="entryDate" type="date" class="p-2 border rounded w-full" />
+        <input id="booking" type="number" placeholder="Booking" class="p-2 border rounded w-full" />
+        <input id="kyc" type="number" placeholder="KYC" class="p-2 border rounded w-full" />
+        <input id="recharge" type="number" placeholder="Recharge" class="p-2 border rounded w-full" />
+        <input id="broadband" type="number" placeholder="Broadband" class="p-2 border rounded w-full" />
+      </div>
+      <div class="flex justify-end items-center mt-4">
+        <button onclick="saveEntry()" class="bg-green-600 text-white px-4 py-2 rounded">Save Entry</button>
+      </div>
+    </div>
+
+    <!-- Report Filter -->
+    <div class="bg-white p-4 rounded shadow mb-6">
+      <h2 class="text-xl font-semibold mb-2">Generate Report</h2>
+      <div class="flex gap-4 flex-wrap">
+        <select id="dateRange" onchange="toggleDateInputs(this.value)" class="p-2 border rounded">
+          <option value="week">Last 7 Days</option>
+          <option value="month">This Month</option>
+          <option value="custom">Custom Range</option>
+        </select>
+        <input id="customStart" type="date" class="p-2 border rounded hidden" />
+        <input id="customEnd" type="date" class="p-2 border rounded hidden" />
+        <select id="reportMember" class="p-2 border rounded">
+          <option value="all">All Members</option>
+        </select>
+        <select id="chartType" class="p-2 border rounded">
+          <option value="bar">Bar</option>
+          <option value="pie">Pie</option>
+          <option value="line">Line</option>
+        </select>
+        <button onclick="generateReport()" class="bg-purple-600 text-white px-4 py-2 rounded">Show Report</button>
+        <button onclick="openChartModal()" class="bg-blue-600 text-white px-4 py-2 rounded">Show Graph</button>
+        <button onclick="openMemberDataModal()" class="bg-green-700 text-white px-4 py-2 rounded">Members Data</button>
+      </div>
+    </div>
+
+    <!-- Report Table -->
+    <div id="reportSection" class="bg-white p-4 rounded shadow mb-6 hidden">
+      <h2 class="text-xl font-semibold mb-4">Report Table</h2>
+      <table class="w-full table-auto border">
+        <thead>
+          <tr class="bg-gray-200">
+            <th class="p-2 border">Name</th>
+            <th class="p-2 border">Booking</th>
+            <th class="p-2 border">KYC</th>
+            <th class="p-2 border">Recharge</th>
+            <th class="p-2 border">Broadband</th>
+            <th class="p-2 border">Total</th>
+          </tr>
+        </thead>
+        <tbody id="reportTable" class="text-center"></tbody>
+      </table>
+    </div>
+
+    <!-- Chart Modal -->
+    <div id="chartModal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center">
+      <div class="bg-white p-6 rounded shadow-lg w-full max-w-3xl relative">
+        <button onclick="closeChartModal()" class="absolute top-2 right-2 text-red-500 font-bold">✕</button>
+        <h2 class="text-xl font-semibold mb-4">Performance Chart</h2>
+        <canvas id="performanceChart"></canvas>
+      </div>
+    </div>
+
+    <!-- Member Data Modal -->
+    <div id="memberDataModal" class="fixed inset-0 bg-black bg-opacity-50 hidden justify-center items-center">
+      <div class="bg-white p-6 rounded shadow-lg w-full max-w-2xl relative">
+        <button onclick="closeMemberDataModal()" class="absolute top-2 right-2 text-red-500 font-bold">✕</button>
+        <h2 class="text-xl font-semibold mb-4">Saved Member Details</h2>
+        <div id="memberDetailsList" class="space-y-2"></div>
+      </div>
+    </div>
+
+    <!-- Delete Member Dropdown -->
+    <div class="text-center text-sm mt-6">
+      <select id="deleteSelect" class="p-2 border rounded w-64"></select>
+      <button onclick="deleteSelectedMember()" class="ml-2 text-red-600 underline">Delete Selected Member</button>
+    </div>
   </div>
 
   <script>
-    function saveCustomer() {
-      const name = document.getElementById('name').value.trim();
-      const number = document.getElementById('number').value.trim();
-      const planDays = parseInt(document.getElementById('plan').value);
+    let members = JSON.parse(localStorage.getItem("members") || "[]");
+    let entries = JSON.parse(localStorage.getItem("entries") || "[]");
 
-      if (!name || !number) {
-        alert("Please enter both name and number.");
-        return;
+    function openMemberModal() {
+      document.getElementById("memberModal").classList.remove("hidden");
+      document.getElementById("memberModal").classList.add("flex");
+    }
+
+    function closeMemberModal() {
+      document.getElementById("memberModal").classList.add("hidden");
+    }
+
+    function openChartModal() {
+      document.getElementById("chartModal").classList.remove("hidden");
+      document.getElementById("chartModal").classList.add("flex");
+    }
+
+    function closeChartModal() {
+      document.getElementById("chartModal").classList.add("hidden");
+    }
+
+    function openMemberDataModal() {
+      const container = document.getElementById("memberDetailsList");
+      container.innerHTML = members.map(m => `
+        <div class="p-2 border rounded bg-gray-100">
+          <strong>Name:</strong> ${m.name} <br/>
+          <strong>ID:</strong> ${m.id} <br/>
+          <strong>Password:</strong> ${m.password} <br/>
+          <strong>Locality:</strong> ${m.locality}
+        </div>
+      `).join("");
+      document.getElementById("memberDataModal").classList.remove("hidden");
+      document.getElementById("memberDataModal").classList.add("flex");
+    }
+
+    function closeMemberDataModal() {
+      document.getElementById("memberDataModal").classList.add("hidden");
+    }
+
+    function updateDropdowns() {
+      const dropdowns = ["entryMember", "reportMember", "deleteSelect"];
+      dropdowns.forEach(id => {
+        const select = document.getElementById(id);
+        select.innerHTML = id === "reportMember" ? '<option value="all">All Members</option>' : '';
+        members.forEach(m => {
+          const option = document.createElement("option");
+          option.value = m.id;
+          option.text = `${m.name} (${m.id})`;
+          select.appendChild(option);
+        });
+      });
+    }
+
+    function deleteSelectedMember() {
+      const id = document.getElementById("deleteSelect").value;
+      if (confirm("Delete selected member?")) {
+        members = members.filter(m => m.id !== id);
+        localStorage.setItem("members", JSON.stringify(members));
+        updateDropdowns();
+        generateReport();
       }
+    }
 
+    function saveMember() {
+      const name = document.getElementById("name").value;
+      const id = document.getElementById("memberId").value;
+      const password = document.getElementById("password").value;
+      const locality = document.getElementById("locality").value;
+      members.push({ name, id, password, locality });
+      localStorage.setItem("members", JSON.stringify(members));
+      updateDropdowns();
+      closeMemberModal();
+      alert("Member saved!");
+    }
+
+    function saveEntry() {
+      const id = document.getElementById("entryMember").value;
+      const date = document.getElementById("entryDate").value;
+      const booking = +document.getElementById("booking").value;
+      const kyc = +document.getElementById("kyc").value;
+      const recharge = +document.getElementById("recharge").value;
+      const broadband = +document.getElementById("broadband").value;
+      entries.push({ id, date, booking, kyc, recharge, broadband });
+      localStorage.setItem("entries", JSON.stringify(entries));
+      generateReport();
+      alert("Entry saved and report updated!");
+    }
+
+    function toggleDateInputs(value) {
+      const show = value === 'custom';
+      document.getElementById("customStart").classList.toggle("hidden", !show);
+      document.getElementById("customEnd").classList.toggle("hidden", !show);
+    }
+
+    function generateReport() {
+      const rangeType = document.getElementById("dateRange").value;
+      const memberId = document.getElementById("reportMember").value;
+      const chartType = document.getElementById("chartType").value;
+      const table = document.getElementById("reportTable");
+      let startDate, endDate = new Date();
       const today = new Date();
-      const dueDate = new Date(today);
-      dueDate.setDate(dueDate.getDate() + planDays);
 
-      const customer = {
-        id: Date.now(),
-        name,
-        number,
-        plan: planDays + ' Days',
-        rechargeDate: today.toISOString().split('T')[0],
-        dueDate: dueDate.toISOString().split('T')[0],
-        calledAt: null
-      };
-
-      let customers = JSON.parse(localStorage.getItem('customers')) || [];
-      customers.push(customer);
-      localStorage.setItem('customers', JSON.stringify(customers));
-      displayCustomers();
-
-      document.getElementById('name').value = '';
-      document.getElementById('number').value = '';
-    }
-
-    function deleteCustomer(id) {
-      let customers = JSON.parse(localStorage.getItem('customers')) || [];
-      customers = customers.filter(c => c.id !== id);
-      localStorage.setItem('customers', JSON.stringify(customers));
-      displayCustomers();
-    }
-
-    function sendWhatsApp(number) {
-      const message = encodeURIComponent(`Recharge_${number}`);
-      const url = `https://wa.me/917001170011?text=${message}`;
-      window.location.href = url;
-    }
-
-    function markCalled(id) {
-      let customers = JSON.parse(localStorage.getItem('customers')) || [];
-      const index = customers.findIndex(c => c.id === id);
-      if (index !== -1) {
-        customers[index].calledAt = new Date().toLocaleTimeString();
-        localStorage.setItem('customers', JSON.stringify(customers));
-        displayCustomers();
-      }
-    }
-
-    function displayCustomers() {
-      const customers = JSON.parse(localStorage.getItem('customers')) || [];
-      const container = document.getElementById('customerList');
-      container.innerHTML = '';
-
-      if (customers.length === 0) {
-        container.innerHTML = '<p class="text-center text-gray-500">No customers added yet.</p>';
-        return;
+      if (rangeType === "week") {
+        startDate = new Date();
+        startDate.setDate(today.getDate() - 7);
+      } else if (rangeType === "month") {
+        startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+      } else {
+        startDate = new Date(document.getElementById("customStart").value);
+        endDate = new Date(document.getElementById("customEnd").value);
       }
 
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const filtered = entries.filter(e => {
+        const d = new Date(e.date);
+        return d >= startDate && d <= endDate && (memberId === "all" || e.id === memberId);
+      });
 
-      customers.forEach(c => {
-        const due = new Date(c.dueDate);
-        due.setHours(0, 0, 0, 0);
+      const totals = {};
+      filtered.forEach(e => {
+        const member = members.find(m => m.id === e.id);
+        const name = member?.name || "Unknown";
+        if (!totals[name]) totals[name] = { booking: 0, kyc: 0, recharge: 0, broadband: 0 };
+        totals[name].booking += e.booking;
+        totals[name].kyc += e.kyc;
+        totals[name].recharge += e.recharge;
+        totals[name].broadband += e.broadband;
+      });
 
-        const msPerDay = 1000 * 60 * 60 * 24;
-        const daysLeft = Math.floor((due - today) / msPerDay);
+      table.innerHTML = "";
+      const chartLabels = [], chartData = [];
+      Object.entries(totals).forEach(([name, data]) => {
+        const total = data.booking + data.kyc + data.recharge + data.broadband;
+        chartLabels.push(name);
+        chartData.push(total);
+        table.innerHTML += `<tr>
+          <td class="border p-2">${name}</td>
+          <td class="border p-2">${data.booking}</td>
+          <td class="border p-2">${data.kyc}</td>
+          <td class="border p-2">${data.recharge}</td>
+          <td class="border p-2">${data.broadband}</td>
+          <td class="border p-2 font-bold">${total}</td>
+        </tr>`;
+      });
 
-        let daysText = '';
-        let dueClass = '';
-        let nameClass = '';
+      document.getElementById("reportSection").classList.remove("hidden");
+      renderChart(chartLabels, chartData, chartType);
+    }
 
-        if (daysLeft < 0) {
-          daysText = `<span class="text-red-600 font-semibold">Expired ${Math.abs(daysLeft)} day(s) ago</span>`;
-          dueClass = 'text-red-600 font-bold';
-          nameClass = 'text-red-600';
-        } else if (daysLeft === 0) {
-          daysText = `<span class="text-yellow-600 font-semibold">Due Today</span>`;
-          dueClass = 'text-yellow-600 font-bold';
-          nameClass = 'text-blue-600';
-        } else {
-          daysText = `<span class="text-green-600 font-semibold">${daysLeft} day(s) left</span>`;
-          dueClass = 'text-gray-700';
-          nameClass = 'text-blue-600';
+    let chartInstance;
+    function renderChart(labels, data, type = 'bar') {
+      const ctx = document.getElementById("performanceChart").getContext("2d");
+      if (chartInstance) chartInstance.destroy();
+      chartInstance = new Chart(ctx, {
+        type: type,
+        data: {
+          labels,
+          datasets: [{
+            label: "Total Tasks",
+            data,
+            backgroundColor: ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899"],
+            borderColor: "#4B5563",
+            borderWidth: 1
+          }]
+        },
+        options: {
+          responsive: true,
+          plugins: {
+            legend: { display: type !== 'bar' },
+            title: { display: true, text: 'Performance Comparison' }
+          }
         }
-
-        const calledTime = c.calledAt
-          ? `<p class="text-sm text-gray-600 mt-1">📞 Called at ${c.calledAt}</p>`
-          : '';
-
-        const callButtonClass = c.calledAt
-          ? 'bg-gray-400 cursor-not-allowed pointer-events-none'
-          : 'bg-green-600 hover:bg-green-700';
-
-        const callButtonAction = c.calledAt
-          ? 'javascript:void(0)'
-          : `tel:${c.number}" onclick="markCalled(${c.id})`;
-
-        container.innerHTML += `
-          <div class="bg-white p-4 rounded-xl shadow border border-gray-200">
-            <div class="flex flex-col sm:flex-row sm:justify-between items-start sm:items-center">
-              <div>
-                <p class="font-bold text-lg ${nameClass}">${c.name}</p>
-                <p class="text-sm text-gray-600">📞 ${c.number}</p>
-                <p class="text-sm text-gray-600">Plan: ${c.plan}</p>
-              </div>
-              <div class="mt-2 sm:mt-0 text-right">
-                <p class="text-sm">Recharge: <span class="font-medium">${c.rechargeDate}</span></p>
-                <p class="text-sm ${dueClass}">Due: <span class="font-medium">${c.dueDate}</span></p>
-                <p class="text-sm mt-1">${daysText}</p>
-              </div>
-            </div>
-            ${calledTime}
-            <div class="mt-3 flex flex-wrap gap-2 justify-end">
-              <button onclick="sendWhatsApp('${c.number}')" class="text-xs px-3 py-1 bg-indigo-600 text-white rounded hover:bg-indigo-700">📩 Send Link</button>
-              <a href="${callButtonAction}" class="text-xs px-3 py-1 text-white rounded ${callButtonClass}">📞 Call</a>
-              <button onclick="deleteCustomer(${c.id})" class="text-xs px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">🗑 Delete</button>
-            </div>
-          </div>`;
       });
     }
 
-    async function exportPDF() {
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-      const element = document.getElementById("customerList");
-
-      await html2canvas(element).then(canvas => {
-        const imgData = canvas.toDataURL('image/png');
-        const imgProps = doc.getImageProperties(imgData);
-        const pdfWidth = doc.internal.pageSize.getWidth();
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-        doc.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight);
-        doc.save("JioRechargeCustomers.pdf");
-      });
-    }
-
-    displayCustomers();
+    // Set today's date
+    document.addEventListener("DOMContentLoaded", () => {
+      document.getElementById("entryDate").value = new Date().toISOString().split("T")[0];
+      updateDropdowns();
+      generateReport();
+    });
   </script>
 </body>
 </html>
